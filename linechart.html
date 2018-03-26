@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.axis--x path {
+  display: none;
+}
+</style>
+<svg width="1000" height="500"></svg>
+<script type="text/javascript" src="./d3.js"></script>
+<script>
+
+var svg = d3.select("svg"),
+    margin = {top: 100, right: 20, bottom: 30, left: 200},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom;
+var  padding = {
+      left: 100,
+      right: 20,
+      bottom: 50,
+      top: 10
+    };
+
+var g = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.csv("airlines.csv", function(d) {
+  return d;
+}, function(data) {
+  var dict = d3.map();
+  var dataset = [];
+  for (var i = 0; i < data.length; i++) {
+        key = data[i].Year;
+        value = data[i].Delayed;
+        if (dict.has(key)) {
+          var tmp = Number(dict.get(key));
+          dict.set(key, tmp + Number(value));
+        } else {
+          dict.set(key, Number(value));
+        }
+  }
+  var keys = dict.keys();
+  var values = dict.values();
+
+  var dataset = [];
+  for (var i = 0; i < keys.length; i++) {
+    var temp = [];
+    temp[0] = keys[i];
+    temp[1] = dict.get(keys[i]);
+    dataset.push(temp);
+  }
+
+  var xScale = d3.scaleBand()
+      .domain(dataset.map(function (d) {
+        return d[0];
+      }))
+      .rangeRound([padding.left, width - padding.left - padding.right]).padding(0.9);
+
+    var yScale = d3.scaleLinear()
+        .domain([0, d3.max(dataset, function (d){
+          return d[1];
+        })])
+        .rangeRound([height - padding.bottom - padding.top, padding.bottom]);
+
+    var line = d3.line()
+      .x(function(dataset, i) { return xScale(dataset[0]); })
+      .y(function(dataset, i) { return yScale(dataset[1]); });
+
+    var xAxis = d3.axisBottom(xScale)
+
+      // g.append("g")
+      // .attr("class", "axis axis--x")
+      // .attr("transform", "translate(0," + height + ")")
+      // .call(d3.axisBottom(xAxis))
+      // .append("text")
+      // .attr("fill", "#000")
+      // .attr("transform", "rotate(0)")
+      // .attr("xScale", 880)
+      // .attr("dx", "-10.71em")
+      // .attr("text-anchor", "end")
+      // .text("Year");
+
+    svg.append("g")
+      .attr("transform", "translate(" + 0 + ", "+ (height - padding.bottom - padding.top) + ")")
+      .call(xAxis)
+      .append("text")
+      .attr("fill", "#000")
+      .attr("transform", "rotate(0)")
+      .attr("x", 690)
+      .attr("dx", "-0.5em")
+      .attr("text-anchor", "end")
+      .text("Year");
+
+    var yAxis = d3.axisLeft(yScale);
+
+    svg.append("g")
+      .attr("transform", "translate(" + padding.left + ", " + 0 + ")")
+      .call(yAxis)
+      .append("text")
+      .attr("fill", "#000")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0)
+      .attr("dy", "0.0em")
+      .attr("text-anchor", "end")
+      .text("Delays");
+
+    svg.append("path")
+      .datum(dataset)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-linecap", "round")
+      .attr("stroke-width", 1.5)
+      .attr("d", line);
+
+
+    svg.append("text")
+        .attr("class", "title")
+        .attr("x", 300)
+        .attr("y", 20)
+        .text("Airlines Delays");
+
+});
+
+</script>
