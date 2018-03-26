@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.bar {
+  fill: steelblue;
+}
+
+.bar text {
+  fill: black;
+  font: 12px sans-serif;
+  text-anchor: middle;
+}
+
+.axis--x path {
+  display: none;
+}
+
+</style>
+<svg width="1000" height="500"></svg>
+<script type="text/javascript" src="./d3.js"></script>
+<script>
+
+var svg = d3.select("svg"),
+    margin = {top: 100, right: 50, bottom: 30, left: 200},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom;
+
+var x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
+    y = d3.scaleLinear().rangeRound([height, 0]);
+
+var g = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.csv("airlines.csv", function(d) {
+  return d;
+}, function(data) {
+  var dict = d3.map();
+  var dataset = [];
+  for (var i = 0; i < data.length; i++) {
+  		key = data[i].Year;
+        value = data[i].Delayed;
+        if (dict.has(key)) {
+        	var tmp = Number(dict.get(key));
+		  	dict.set(key, tmp + Number(value));
+	  	} else {
+			dict.set(key, Number(value));
+    	}
+  }
+  var keys = dict.keys();
+  var values = dict.values();
+
+  x.domain(keys.map(function(d) { return d; }));
+  y.domain([0, d3.max(values, function(d) { return d; })]);
+
+  var dataset = [];
+
+  for (var i = 0; i < keys.length; i++) {
+  	var temp = [];
+  	temp[0] = keys[i];
+  	temp[1] = dict.get(keys[i]);
+  	dataset.push(temp);
+  }
+  console.log("value", dataset);
+
+  g.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x))
+      .append("text")
+      .attr("fill", "#000")
+      .attr("transform", "rotate(0)")
+      .attr("x", 880)
+      .attr("dx", "-10.71em")
+      .attr("text-anchor", "end")
+      .text("Year");
+
+  g.append("g")
+      .attr("class", "axis axis--y")
+      .call(d3.axisLeft(y))
+      .append("text")
+      .attr("fill", "#000")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .attr("text-anchor", "end")
+      .text("Delayed");
+
+  g.selectAll(".bar")
+    .data(dataset)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { console.log("key", d[0]); return x(d[0]); })
+      .attr("y", function(d) { return y(d[1]); })
+      .attr("width", x.bandwidth())
+      .attr("height", function(d) { return height - y(d[1]); });
+
+  g.append("text")
+      .attr("class", "title")
+      .attr("x", 300)
+      .attr("y", -30)
+      .text("Airlines Delays");
+
+});
+
+</script>
