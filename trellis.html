@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="d3.js"></script>
+  </head>
+<body>
+  <script type="text/javascript">
+    var w = 1000;
+    var h = 800;
+    var margin = {
+      top: 50,
+      bottom: 50,
+      right:20,
+      left: 100
+    };
+    var size = 150;
+    var rows = 3;
+    var cols = 4;
+    var type = [
+      {name: "hip hop",data: []},
+      {name: "blue-eyed soul",data: []},
+      {name: "salsa",data: []},
+      {name: "pop rock",data: []},
+      {name: "pop punk",data: []},
+      {name: "southern gospel",data: []},
+      {name: "breakbeat",data: []},
+      {name: "post-hardcore",data: []},
+      {name: "new wave",data: []},
+      {name: "breakcore",data: []},
+      {name: "alternative rock",data: []},
+      {name: "ccm",data: []}
+    ];
+
+    d3.csv("./music.csv", function (data) {
+      data.forEach(function (d) {
+        d["mode_confidence"] = +d["mode_confidence"];
+        d["artist.hotttnesss"] = +d["artist.hotttnesss"];
+        d["key"] = +d["key"];
+
+        type[d["key"]].data.push(d);
+      });
+
+      var xScale = d3.scaleLinear()
+          .domain([0, d3.max(data, function (d) {
+            return d["mode_confidence"]
+          })])
+          .range([0, size]);
+
+      var yScale = d3.scaleLinear()
+          .domain([0, d3.max(data, function (d) {
+            return d["artist.hotttnesss"]
+          })])
+          .range([size, 0]);
+
+      var svg = d3.select("body")
+        .append("svg")
+        .attr("width", w)
+        .attr("height", h);
+
+
+
+      type.forEach(function (m, i) {
+        var xOffset = 0;
+        var yOffset = 0;
+
+        if (i % 3 == 0) {
+          xOffset = margin.left;
+        } else if (i % 3 == 1) {
+          xOffset = margin.left + size;
+        } else if (i % 3 == 2) {
+          xOffset = margin.left + size * 2;
+        } else {
+          xOffset = margin.left + size * 3;
+        }
+
+        if  (i < 3) {
+          yOffset = margin.top;
+        } else if (i < 6) {
+          yOffset = margin.top + size;
+        } else if (i < 9) {
+          yOffset = margin.top + size * 2;
+        } else {
+          yOffset = margin.top + size * 3;
+        }
+
+        svg.selectAll("type.label." + m.name)
+        .data(m.name)
+        .enter()
+        .append("text")
+        .attr("fill", "#2E4E60")
+        .attr("x", xOffset + size/2)
+        .attr("y", yOffset + 30)
+        .attr("text-anchor", "middle")
+        .text(m.name);
+
+        svg.selectAll("line.vertical." + m.name)
+        .data([1])
+        .enter()
+        .append("line")
+        .attr("stroke", "#bcbcbc")
+        .attr("stroke-width", "1")
+        .attr("x1", xOffset + size)
+        .attr("y1", yOffset + 0)
+        .attr("x2", xOffset + size)
+        .attr("y2", yOffset + size);
+
+        svg.selectAll("line.horizontal." + m.name)
+        .data([1])
+        .enter()
+        .append("line")
+        .attr("stroke", "#bcbcbc")
+        .attr("stroke-width", "1")
+        .attr("x1", xOffset )
+        .attr("y1", yOffset + size)
+        .attr("x2", xOffset + size)
+        .attr("y2", yOffset + size);
+      });
+
+      type.forEach(function (m, i) {
+        var xOffset = 0;
+        var yOffset = 0;
+
+        if (i % 3 == 0) {
+          xOffset = margin.left;
+        } else if (i % 3 == 1) {
+          xOffset = margin.left + size;
+        } else if (i % 3 == 2) {
+          xOffset = margin.left + size * 2;
+        } else {
+          xOffset = margin.left + size * 3;
+        }
+
+        if  (i < 3) {
+          yOffset = margin.top;
+        } else if (i < 6) {
+          yOffset = margin.top + size;
+        } else if (i < 9) {
+          yOffset = margin.top + size * 2;
+        } else {
+          yOffset = margin.top + size * 3;
+        }
+
+        svg.selectAll("g.circle." + m.name)
+          .data(m.data)
+          .enter()
+          .append("circle")
+          .attr("fill", "#EBA0A6")
+          .attr("cx", function (d) {
+            return xScale(d.mode_confidence) + xOffset;
+          })
+          .attr("cy", function (d) {
+            return yScale(d["artist.hotttnesss"]) + yOffset;
+          })
+          .attr("r", 5);
+
+        var xAxis = svg.selectAll("g.x.axis.top")
+        .data([1,2,3])
+        .enter().append("svg:g")
+        .attr("class", "x axis")
+        .attr("transform", function(d, i) {
+          return "translate(" + (margin.left + (i * size)) + "," + margin.top + ")"; 
+        })
+        .each(function(d) { d3.select(this).call(d3.axisBottom(xScale).ticks(3));
+         })
+        .append("text")
+        .attr("fill", "#000")
+        .attr("y", -margin.top/2)
+        .attr("x", size)
+        .attr("dy", "0.71em")
+        .attr("text-anchor", "end")
+        .text("mode_confidence");
+
+      var yAxis = svg.selectAll("g.y.axis")
+        .data([1,2,3,4])
+        .enter().append("svg:g")
+        .attr("class", "y axis")
+        .attr("transform", function(d, i) {
+           return "translate(" + margin.left + "," + ((i * size) + margin.top) + ")"; 
+         })
+        .each(function(d) { d3.select(this).call(d3.axisLeft(yScale).ticks(5)); })
+        .append("text")
+        .attr("fill", "#000")
+        .attr("y", size)
+        .attr("dy", "0.71em")
+        .attr("text-anchor", "end")
+        .attr("transform", "rotate(-90) translate(0, -" + (size + margin.left / 3 * 2)+ ")")
+        .text("artist.hotttnesss");
+      })
+
+
+    });
+  </script>
+  </body>
+</html>

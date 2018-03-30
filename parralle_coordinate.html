@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.foreground path {
+  fill: none;
+  stroke: steelblue;
+}
+
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #020;
+}
+
+</style>
+<body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+function position(d) {
+  var v = transformation[d];
+  return v == null ? x(d) : v;
+}
+
+function transition(g) {
+  return g.transition().duration(0);
+}
+
+function path(d) {
+  return line(dimensions.map(function(p) 
+    {
+       return [position(p), y[p](d[p])]; 
+    }));
+}
+
+var margin = {
+  top: 50, 
+  right: 10, 
+  bottom: 30, 
+  left: 10},
+  width = 960 - margin.left - margin.right,
+  height = 560 - margin.top - margin.bottom;
+
+var x = d3.scale.ordinal().rangePoints([0, width], 1),
+    y = {},
+    transformation = {};
+
+var line = d3.svg.line(),
+    axis = d3.svg.axis().orient("left"),
+    background,
+    foreground;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.csv("flowers.csv", function(error, flowers) {
+  x.domain(dimensions = d3.keys(flowers[0]).filter(function(d) {
+    return d != "species" && (y[d] = d3.scale.linear()
+        .domain(d3.extent(flowers, function(p) { return +p[d]; }))
+        .range([height, 0]));
+  }));
+
+  foreground = svg.append("g")
+      .attr("class", "foreground")
+      .selectAll("path")
+      .data(flowers)
+      .enter().append("path")
+      .attr("d", path);
+
+  var g = svg.selectAll(".dimension")
+      .data(dimensions)
+      .enter().append("g")
+      .attr("class", "dimension")
+      .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+      .call(
+        d3.behavior.drag()
+        .origin(function(d) { return {x: x(d)}; })
+        .on("dragstart", function(d) {
+          transformation[d] = x(d);
+          background.attr("visibility", "hidden");
+        }
+        )
+        .on("dragend", function(d) {
+          delete transformation[d];
+          transition(d3.select(this)).attr("transform", "translate(" + x(d) + ")");
+          transition(foreground).attr("d", path);
+          background
+              .attr("d", path)
+            .transition()
+              .delay(500)
+              .duration(0)
+              .attr("visibility", null);
+        }));
+
+  g.append("g")
+      .attr("class", "axis")
+      .each(function(d) { d3.select(this).call(axis.scale(y[d])); })
+    .append("text")
+      .style("text-anchor", "middle")
+      .attr("y", -9)
+      .text(function(d) { return d; });
+
+});
+
+</script>
